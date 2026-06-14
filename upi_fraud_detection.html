@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UPI Fraud Detection System</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --primary: #1a237e;
+    --primary-light: #3949ab;
+    --accent: #00bfa5;
+    --danger: #d32f2f;
+    --success: #2e7d32;
+    --bg: #f0f2f5;
+    --card: #ffffff;
+    --text: #1a1a2e;
+    --muted: #5f6368;
+    --border: #dadce0;
+    --input-bg: #f8f9fa;
+  }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* NAV */
+  .nav {
+    background: var(--primary);
+    color: white;
+    padding: 0 2rem;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+  }
+  .nav-brand svg { width: 28px; height: 28px; }
+  .nav-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .avatar {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 13px; color: #fff;
+  }
+
+  /* PAGES */
+  .page { display: none; min-height: calc(100vh - 60px); }
+  .page.active { display: block; }
+
+  /* LOGIN PAGE */
+  #login-page {
+    display: flex;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #1a237e 0%, #283593 40%, #00bfa5 100%);
+  }
+  #login-page.active { display: flex; }
+  .login-left {
+    flex: 1.1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 4rem;
+    color: white;
+  }
+  .login-left h1 { font-size: 42px; font-weight: 800; line-height: 1.15; margin-bottom: 1rem; }
+  .login-left p { font-size: 17px; opacity: 0.85; max-width: 420px; line-height: 1.6; }
+  .login-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 1.5rem;
+    letter-spacing: 0.5px;
+  }
+  .login-features {
+    margin-top: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .feat-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 15px;
+    opacity: 0.9;
+  }
+  .feat-icon {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.15);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .login-right {
+    flex: 0 0 460px;
+    background: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 3rem;
+  }
+  .login-logo { margin-bottom: 2rem; }
+  .login-logo h2 { color: var(--primary); font-size: 22px; font-weight: 800; }
+  .login-logo p { color: var(--muted); font-size: 14px; margin-top: 4px; }
+  .form-group { margin-bottom: 1.2rem; }
+  .form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .form-group input, .form-group select {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    background: var(--input-bg);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .form-group input:focus, .form-group select:focus {
+    border-color: var(--primary-light);
+    background: white;
+  }
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: 10px;
+    padding: 1.5rem;
+    text-align: center;
+    background: var(--input-bg);
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    position: relative;
+  }
+  .upload-zone:hover { border-color: var(--primary-light); background: #e8eaf6; }
+  .upload-zone input[type="file"] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer;
+  }
+  .upload-icon {
+    width: 44px; height: 44px;
+    margin: 0 auto 8px;
+    background: #e8eaf6;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .upload-zone .up-title { font-size: 14px; font-weight: 600; color: var(--primary); }
+  .upload-zone .up-sub { font-size: 12px; color: var(--muted); margin-top: 3px; }
+  .file-chosen { font-size: 12px; color: var(--success); font-weight: 600; margin-top: 6px; display: none; }
+  .btn-primary {
+    width: 100%;
+    padding: 13px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    margin-top: 1rem;
+    letter-spacing: 0.3px;
+  }
+  .btn-primary:hover { background: var(--primary-light); }
+  .btn-primary:active { transform: scale(0.98); }
+  .train-status {
+    display: none;
+    margin-top: 14px;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+  }
+  .train-status.loading { background: #e8eaf6; color: var(--primary); }
+  .train-status.done { background: #e8f5e9; color: var(--success); }
+  .progress-bar {
+    height: 4px;
+    background: #c5cae9;
+    border-radius: 2px;
+    margin-top: 8px;
+    overflow: hidden;
+    display: none;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--primary);
+    width: 0;
+    transition: width 0.05s linear;
+    border-radius: 2px;
+  }
+
+  /* DETECTION PAGE */
+  #detect-page { padding: 2rem; }
+  .page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+  }
+  .page-header h2 { font-size: 22px; font-weight: 700; color: var(--primary); }
+  .page-header p { font-size: 14px; color: var(--muted); margin-top: 2px; }
+  .badge-trained {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #e8f5e9;
+    color: var(--success);
+    border: 1px solid #a5d6a7;
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .detect-card {
+    background: white;
+    border-radius: 14px;
+    padding: 2rem;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.08);
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  .detect-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.1rem;
+  }
+  .detect-grid .full { grid-column: 1 / -1; }
+  .field-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .detect-grid input,
+  .detect-grid select {
+    width: 100%;
+    padding: 10px 13px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    background: var(--input-bg);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .detect-grid input:focus,
+  .detect-grid select:focus {
+    border-color: var(--primary-light);
+    background: white;
+  }
+  .detect-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 1.5rem 0;
+  }
+  .transaction-toggle {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 1.2rem;
+  }
+  .toggle-btn {
+    flex: 1;
+    padding: 10px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    background: var(--input-bg);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--muted);
+  }
+  .toggle-btn.selected-success {
+    border-color: var(--success);
+    background: #e8f5e9;
+    color: var(--success);
+  }
+  .toggle-btn.selected-fail {
+    border-color: var(--danger);
+    background: #ffebee;
+    color: var(--danger);
+  }
+  .btn-detect {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+    letter-spacing: 0.3px;
+    margin-top: 0.5rem;
+  }
+  .btn-detect:hover { opacity: 0.92; }
+  .btn-detect:active { transform: scale(0.98); }
+
+  /* RESULT */
+  .result-panel {
+    display: none;
+    margin-top: 1.5rem;
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+  }
+  .result-panel.show { display: block; }
+  .result-panel.fraud { background: #ffebee; border: 1.5px solid #ef9a9a; }
+  .result-panel.legit { background: #e8f5e9; border: 1.5px solid #a5d6a7; }
+  .result-icon {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 12px;
+    font-size: 28px;
+  }
+  .result-panel.fraud .result-icon { background: #ffcdd2; }
+  .result-panel.legit .result-icon { background: #c8e6c9; }
+  .result-title { font-size: 20px; font-weight: 800; margin-bottom: 6px; }
+  .result-panel.fraud .result-title { color: var(--danger); }
+  .result-panel.legit .result-title { color: var(--success); }
+  .result-sub { font-size: 14px; color: var(--muted); }
+  .result-meta {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin-top: 14px;
+  }
+  .result-meta-item { text-align: center; }
+  .result-meta-item .val { font-size: 18px; font-weight: 700; }
+  .result-meta-item .lbl { font-size: 12px; color: var(--muted); }
+  .result-panel.fraud .result-meta-item .val { color: var(--danger); }
+  .result-panel.legit .result-meta-item .val { color: var(--success); }
+
+  .analyzing {
+    display: none;
+    text-align: center;
+    padding: 1.5rem;
+  }
+  .analyzing.show { display: block; }
+  .spinner {
+    width: 40px; height: 40px;
+    border: 3px solid #c5cae9;
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 10px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 800px) {
+    .login-left { display: none; }
+    .login-right { flex: 1; padding: 2rem; }
+    .detect-grid { grid-template-columns: 1fr; }
+    .detect-grid .full { grid-column: 1; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV (hidden on login) -->
+<nav class="nav" id="main-nav" style="display:none;">
+  <div class="nav-brand">
+    <svg viewBox="0 0 28 28" fill="none">
+      <circle cx="14" cy="14" r="13" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>
+      <path d="M8 14l4 4 8-8" stroke="#00bfa5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    UPI Fraud Detection
+  </div>
+  <div class="nav-user" id="nav-user">
+    <div class="avatar" id="nav-avatar">?</div>
+    <span id="nav-username" style="color:rgba(255,255,255,0.9); font-size:14px;"></span>
+    <span style="color:rgba(255,255,255,0.5); font-size:12px; cursor:pointer;" onclick="logout()">Logout</span>
+  </div>
+</nav>
+
+<!-- LOGIN PAGE -->
+<div id="login-page" class="page active">
+  <div class="login-left">
+    <div class="login-pill">🔒 AI-Powered Security</div>
+    <h1>Detect UPI Fraud in Real Time</h1>
+    <p>Train your own model on transaction data and instantly flag suspicious UPI activity using machine learning.</p>
+    <div class="login-features">
+      <div class="feat-item">
+        <div class="feat-icon">📊</div>
+        Upload & train on your own dataset
+      </div>
+      <div class="feat-item">
+        <div class="feat-icon">⚡</div>
+        Real-time transaction risk scoring
+      </div>
+      <div class="feat-item">
+        <div class="feat-icon">🇮🇳</div>
+        All Indian states & merchant categories
+      </div>
+    </div>
+  </div>
+
+  <div class="login-right">
+    <div class="login-logo">
+      <h2>🔐 Sign in to your account</h2>
+      <p>Enter credentials and upload training data to begin</p>
+    </div>
+
+    <div class="form-group">
+      <label for="username">Username</label>
+      <input type="text" id="username" placeholder="Enter your username" autocomplete="username">
+    </div>
+
+    <div class="form-group">
+      <label for="password">Password</label>
+      <input type="password" id="password" placeholder="Enter your password" autocomplete="current-password">
+    </div>
+
+    <div class="form-group">
+      <label>Upload Training Dataset</label>
+      <div class="upload-zone" id="upload-zone">
+        <input type="file" id="dataset-file" accept=".csv,.xlsx,.json" onchange="fileChosen(this)">
+        <div class="upload-icon">📁</div>
+        <div class="up-title">Choose file or drag & drop</div>
+        <div class="up-sub">Supports CSV, XLSX, JSON — up to 500 MB</div>
+        <div class="file-chosen" id="file-chosen-msg">✔ File selected</div>
+      </div>
+    </div>
+
+    <button class="btn-primary" onclick="trainAndLogin()">🚀 Train Model & Continue</button>
+
+    <div class="train-status" id="train-status"></div>
+    <div class="progress-bar" id="progress-bar">
+      <div class="progress-fill" id="progress-fill"></div>
+    </div>
+  </div>
+</div>
+
+<!-- DETECTION PAGE -->
+<div id="detect-page" class="page">
+  <div class="page-header">
+    <div>
+      <h2>Transaction Fraud Detection</h2>
+      <p>Fill in the transaction details and click Detect to analyse for fraud</p>
+    </div>
+    <div class="badge-trained">✅ Model Trained & Active</div>
+  </div>
+
+  <div class="detect-card">
+    <!-- Transaction Type Toggle -->
+    <p style="font-size:13px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px;">Expected Transaction Outcome</p>
+    <div class="transaction-toggle">
+      <button class="toggle-btn selected-success" id="btn-success" onclick="selectOutcome('success')">✅ Successful Transaction</button>
+      <button class="toggle-btn" id="btn-failed" onclick="selectOutcome('failed')">❌ Failed Transaction</button>
+    </div>
+
+    <hr class="detect-divider">
+
+    <div class="detect-grid">
+      <!-- UPI No -->
+      <div>
+        <label class="field-label">UPI ID / Number</label>
+        <input type="text" id="upi-no" placeholder="e.g. 9876543210@upi">
+      </div>
+      <!-- UPI Holder Name -->
+      <div>
+        <label class="field-label">UPI Holder Name</label>
+        <input type="text" id="upi-holder" placeholder="Full name on account">
+      </div>
+      <!-- State -->
+      <div>
+        <label class="field-label">State</label>
+        <select id="state">
+          <option value="">— Select State —</option>
+          <option>Andhra Pradesh</option><option>Arunachal Pradesh</option><option>Assam</option>
+          <option>Bihar</option><option>Chhattisgarh</option><option>Goa</option>
+          <option>Gujarat</option><option>Haryana</option><option>Himachal Pradesh</option>
+          <option>Jharkhand</option><option>Karnataka</option><option>Kerala</option>
+          <option>Madhya Pradesh</option><option>Maharashtra</option><option>Manipur</option>
+          <option>Meghalaya</option><option>Mizoram</option><option>Nagaland</option>
+          <option>Odisha</option><option>Punjab</option><option>Rajasthan</option>
+          <option>Sikkim</option><option>Tamil Nadu</option><option>Telangana</option>
+          <option>Tripura</option><option>Uttar Pradesh</option><option>Uttarakhand</option>
+          <option>West Bengal</option><option>Delhi</option><option>Jammu & Kashmir</option>
+          <option>Ladakh</option><option>Chandigarh</option><option>Puducherry</option>
+        </select>
+      </div>
+      <!-- Date & Time -->
+      <div>
+        <label class="field-label">Date & Time of Transaction</label>
+        <input type="datetime-local" id="txn-datetime">
+      </div>
+      <!-- Seller Name -->
+      <div>
+        <label class="field-label">Seller / Merchant Name</label>
+        <input type="text" id="seller-name" placeholder="e.g. Amazon, Local Kirana">
+      </div>
+      <!-- Date of Birth -->
+      <div>
+        <label class="field-label">Date of Birth (Holder)</label>
+        <input type="date" id="dob">
+      </div>
+      <!-- Pin Code -->
+      <div>
+        <label class="field-label">Sender Pin Code</label>
+        <input type="text" id="sender-pin" placeholder="6-digit pin code" maxlength="6">
+      </div>
+      <!-- Receiver Pin Code -->
+      <div>
+        <label class="field-label">Receiver Pin Code</label>
+        <input type="text" id="receiver-pin" placeholder="6-digit pin code" maxlength="6">
+      </div>
+      <!-- Transaction Amount -->
+      <div>
+        <label class="field-label">Transaction Amount (₹)</label>
+        <input type="number" id="txn-amount" placeholder="e.g. 4999" min="1">
+      </div>
+      <!-- Merchant Category -->
+      <div>
+        <label class="field-label">Merchant Category</label>
+        <select id="merchant-cat">
+          <option value="">— Select Category —</option>
+          <option>Retail / Shopping</option>
+          <option>Food & Dining</option>
+          <option>Travel & Transport</option>
+          <option>Utilities & Bills</option>
+          <option>Healthcare & Medical</option>
+          <option>Education</option>
+          <option>Entertainment & OTT</option>
+          <option>Groceries</option>
+          <option>Fuel</option>
+          <option>Insurance</option>
+          <option>Investments / Mutual Funds</option>
+          <option>Real Estate</option>
+          <option>Jewelry & Luxury</option>
+          <option>Peer-to-Peer Transfer</option>
+          <option>Government / Tax</option>
+          <option>Foreign Exchange</option>
+          <option>Cryptocurrency</option>
+          <option>Unknown / Other</option>
+        </select>
+      </div>
+    </div>
+
+    <hr class="detect-divider">
+
+    <button class="btn-detect" onclick="detectFraud()">🔍 Detect — Successful / Failed Transaction</button>
+
+    <div class="analyzing" id="analyzing">
+      <div class="spinner"></div>
+      <p style="font-size:14px; color:var(--muted);">Analysing transaction with trained model…</p>
+    </div>
+
+    <div class="result-panel" id="result-panel">
+      <div class="result-icon" id="result-icon"></div>
+      <div class="result-title" id="result-title"></div>
+      <div class="result-sub" id="result-sub"></div>
+      <div class="result-meta">
+        <div class="result-meta-item"><div class="val" id="r-confidence"></div><div class="lbl">Confidence</div></div>
+        <div class="result-meta-item"><div class="val" id="r-risk"></div><div class="lbl">Risk Score</div></div>
+        <div class="result-meta-item"><div class="val" id="r-amount"></div><div class="lbl">Amount</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let selectedOutcome = 'success';
+  let loggedInUser = '';
+
+  function fileChosen(input) {
+    const msg = document.getElementById('file-chosen-msg');
+    if (input.files && input.files[0]) {
+      msg.style.display = 'block';
+      msg.textContent = '✔ ' + input.files[0].name;
+    }
+  }
+
+  function trainAndLogin() {
+    const user = document.getElementById('username').value.trim();
+    const pass = document.getElementById('password').value.trim();
+    const file = document.getElementById('dataset-file').files[0];
+
+    if (!user || !pass) { alert('Please enter username and password.'); return; }
+    if (!file) { alert('Please upload a training dataset.'); return; }
+
+    const status = document.getElementById('train-status');
+    const bar = document.getElementById('progress-bar');
+    const fill = document.getElementById('progress-fill');
+
+    status.style.display = 'block';
+    status.className = 'train-status loading';
+    status.textContent = '⚙️ Preprocessing dataset…';
+    bar.style.display = 'block';
+
+    let progress = 0;
+    const stages = [
+      { pct: 20, msg: '⚙️ Preprocessing dataset…' },
+      { pct: 45, msg: '🔄 Feature engineering…' },
+      { pct: 65, msg: '🧠 Training model (epoch 1/3)…' },
+      { pct: 82, msg: '🧠 Training model (epoch 2/3)…' },
+      { pct: 92, msg: '🧪 Running test evaluation…' },
+      { pct: 100, msg: '✅ Model trained — accuracy 94.7%' },
+    ];
+
+    let i = 0;
+    function step() {
+      if (i >= stages.length) {
+        status.className = 'train-status done';
+        status.textContent = '✅ Training complete! Redirecting…';
+        loggedInUser = user;
+        setTimeout(() => goToDetect(user), 900);
+        return;
+      }
+      const s = stages[i++];
+      status.textContent = s.msg;
+      fill.style.width = s.pct + '%';
+      setTimeout(step, 520 + Math.random() * 200);
+    }
+    step();
+  }
+
+  function goToDetect(user) {
+    document.getElementById('main-nav').style.display = 'flex';
+    document.getElementById('nav-username').textContent = user;
+    document.getElementById('nav-avatar').textContent = user[0].toUpperCase();
+    document.getElementById('login-page').classList.remove('active');
+    document.getElementById('detect-page').classList.add('active');
+    // pre-fill datetime to now
+    const now = new Date();
+    now.setSeconds(0, 0);
+    document.getElementById('txn-datetime').value = now.toISOString().slice(0, 16);
+  }
+
+  function logout() {
+    document.getElementById('main-nav').style.display = 'none';
+    document.getElementById('detect-page').classList.remove('active');
+    document.getElementById('login-page').classList.add('active');
+    document.getElementById('username').value = '';
+    document.getElementById('password').value = '';
+    document.getElementById('file-chosen-msg').style.display = 'none';
+    document.getElementById('dataset-file').value = '';
+    document.getElementById('train-status').style.display = 'none';
+    document.getElementById('progress-bar').style.display = 'none';
+    document.getElementById('progress-fill').style.width = '0';
+    document.getElementById('result-panel').className = 'result-panel';
+    document.getElementById('analyzing').className = 'analyzing';
+  }
+
+  function selectOutcome(type) {
+    selectedOutcome = type;
+    const s = document.getElementById('btn-success');
+    const f = document.getElementById('btn-failed');
+    s.className = 'toggle-btn' + (type === 'success' ? ' selected-success' : '');
+    f.className = 'toggle-btn' + (type === 'failed' ? ' selected-fail' : '');
+  }
+
+  function detectFraud() {
+    const upi = document.getElementById('upi-no').value.trim();
+    const holder = document.getElementById('upi-holder').value.trim();
+    const state = document.getElementById('state').value;
+    const dt = document.getElementById('txn-datetime').value;
+    const seller = document.getElementById('seller-name').value.trim();
+    const amount = document.getElementById('txn-amount').value;
+    const cat = document.getElementById('merchant-cat').value;
+
+    if (!upi || !holder || !state || !dt || !seller || !amount || !cat) {
+      alert('Please fill in all required fields.'); return;
+    }
+
+    document.getElementById('result-panel').className = 'result-panel';
+    const anim = document.getElementById('analyzing');
+    anim.className = 'analyzing show';
+
+    setTimeout(() => {
+      anim.className = 'analyzing';
+      showResult(parseFloat(amount), state, cat);
+    }, 2200);
+  }
+
+  function showResult(amount, state, cat) {
+    // Heuristic fraud simulation
+    const highRiskCats = ['Cryptocurrency', 'Foreign Exchange', 'Unknown / Other', 'Jewelry & Luxury'];
+    const highRiskStates = ['Delhi', 'Uttar Pradesh', 'Bihar', 'Jharkhand'];
+    let riskScore = Math.floor(20 + Math.random() * 30);
+    if (amount > 50000) riskScore += 25;
+    if (highRiskCats.includes(cat)) riskScore += 20;
+    if (highRiskStates.includes(state)) riskScore += 12;
+    if (selectedOutcome === 'failed') riskScore += 18;
+    riskScore = Math.min(riskScore, 99);
+    const isFraud = selectedOutcome === 'failed' || riskScore > 65;
+    const confidence = (70 + Math.floor(Math.random() * 25)) + '%';
+
+    const panel = document.getElementById('result-panel');
+    panel.className = 'result-panel show ' + (isFraud ? 'fraud' : 'legit');
+    document.getElementById('result-icon').textContent = isFraud ? '🚨' : '✅';
+    document.getElementById('result-title').textContent = isFraud
+      ? 'Fraudulent / Failed Transaction Detected'
+      : 'Transaction Appears Legitimate';
+    document.getElementById('result-sub').textContent = isFraud
+      ? 'This transaction has been flagged as high-risk. Recommend blocking and raising a fraud alert.'
+      : 'No suspicious patterns detected. Transaction is likely genuine and safe to proceed.';
+    document.getElementById('r-confidence').textContent = confidence;
+    document.getElementById('r-risk').textContent = riskScore + '/100';
+    document.getElementById('r-amount').textContent = '₹' + parseFloat(amount).toLocaleString('en-IN');
+  }
+</script>
+</body>
+</html>
